@@ -1,0 +1,12 @@
+{{- if .Values.storage.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "tron.fullname" . }}-outputs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.storage.outputs.size }}
+{{- end }}

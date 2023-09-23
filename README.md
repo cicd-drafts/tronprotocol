@@ -1,2 +1,2 @@
-# tronprotocol
-Helm Chart for tronprotocol/java-tron
+# tron
+Helm Chart for tron/java-tron

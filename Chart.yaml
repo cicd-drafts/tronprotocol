@@ -1,0 +1,7 @@
+apiVersion: v2
+name: tron
+description: A Helm chart for deploying Tron fullnode
+
+type: application
+version: 0.1.0
+appVersion: "GreatVoyage-v4.7.2"

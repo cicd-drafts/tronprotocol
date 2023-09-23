@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tron.fullname" . }}
+  labels:
+    {{- include "tron.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "tron.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tron.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tron.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - -c
+            - /java-tron/config/net_config.conf
+            - --log-config
+            - /java-tron/config/logback.xml
+          volumeMounts:
+            - name: config
+              mountPath: /java-tron/config/
+            - name: outputs
+              mountPath: {{ .Values.storage.outputs.path }}
+          ports:
+            - name: http
+              containerPort: 8090
+              protocol: TCP
+            - name: listen
+              containerPort: 18888
+              protocol: TCP
+            - name: rpc
+              containerPort: 50051
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: 8090
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8090
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "tron.fullname" . }}
+        - name: outputs
+          {{- if .Values.storage.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "tron.fullname" . }}-outputs
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
